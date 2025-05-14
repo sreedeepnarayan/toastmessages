@@ -1,265 +1,252 @@
-# React Toast Notification System
+# Toast Notification Component
 
-A lightweight, customizable toast notification system built with React and Tailwind CSS. This implementation follows best practices and provides a clean, reusable API for displaying temporary feedback messages to users.
+A flexible and reusable toast notification system built with React, featuring multiple notification types, custom durations, and automatic dismissal.
 
-## Features
+## Table of Contents
+- [Implementation Details](#implementation-details)
+- [Technical Architecture](#technical-architecture)
+- [Key Features](#key-features)
+- [Usage Guide](#usage-guide)
+- [Testing Strategy](#testing-strategy)
+- [Interview Talking Points](#interview-talking-points)
+- [Best Practices](#best-practices)
+- [Performance Considerations](#performance-considerations)
 
-- 🎨 Three types of notifications: Success, Warning, and Danger
-- ⏱️ Configurable auto-dismiss duration
-- 📱 Responsive design for both mobile and desktop
-- 🎯 Stacking notifications with smooth animations
-- 🔍 Accessible with proper ARIA attributes
-- 🎯 No external toast libraries used
-- 🎨 Matches Figma design specifications
+## Implementation Details
 
-## Installation
+### Core Architecture
+The toast system is built with three main components:
+1. **ToastContext**: Manages state and provides toast functionality
+2. **ToastContainer**: Handles toast layout and positioning
+3. **Toast**: Individual notification component
 
-```bash
-npm install
-```
-
-## Usage
-
-### 1. Wrap your app with ToastProvider
-
+### State Management
 ```jsx
-import { ToastProvider } from './components/Toast/ToastContext';
+// ToastContext.jsx
+const ToastContext = createContext(null);
 
-function App() {
+export const ToastProvider = ({ children }) => {
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = useCallback(({ type, title, message, duration = 6000 }) => {
+    const id = uuidv4();
+    setToasts(prev => [...prev, { id, type, title, message, duration }]);
+  }, []);
+
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
   return (
-    <ToastProvider>
-      <YourApp />
-    </ToastProvider>
+    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+      {children}
+    </ToastContext.Provider>
   );
-}
+};
 ```
 
-### 2. Add ToastContainer to your app
-
+### UI Implementation
 ```jsx
-import ToastContainer from './components/Toast/ToastContainer';
-
-function YourApp() {
+// ToastContainer.jsx
+const ToastContainer = () => {
+  const { toasts, removeToast } = useToast();
   return (
-    <>
-      <YourContent />
-      <ToastContainer />
-    </>
-  );
-}
-```
-
-### 3. Use the useToast hook to show notifications
-
-```jsx
-import { useToast } from './components/Toast/ToastContext';
-
-function YourComponent() {
-  const { addToast } = useToast();
-
-  const showNotification = () => {
-    addToast({
-      type: 'success', // 'success', 'warning', or 'danger'
-      title: 'Optional Title',
-      message: 'Your message here',
-      duration: 6000, // optional, defaults to 6000ms
-    });
-  };
-
-  return <button onClick={showNotification}>Show Toast</button>;
-}
-```
-
-## API Reference
-
-### ToastProvider Props
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| children | ReactNode | Yes | The content to be wrapped by the provider |
-
-### useToast Hook
-
-Returns an object with the following methods:
-
-#### addToast(options: ToastOptions)
-
-```typescript
-interface ToastOptions {
-  type: 'success' | 'warning' | 'danger';
-  title?: string;
-  message: string;
-  duration?: number; // in milliseconds
-}
-```
-
-#### removeToast(id: string)
-
-Removes a toast by its ID.
-
-## Testing
-
-### Unit Tests
-
-1. **Toast Component Tests**
-```jsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import Toast from './Toast';
-
-describe('Toast', () => {
-  it('renders with correct type and message', () => {
-    render(
-      <Toast
-        id="1"
-        type="success"
-        message="Test message"
-        onClose={() => {}}
-      />
-    );
-    expect(screen.getByText('Test message')).toBeInTheDocument();
-  });
-
-  it('calls onClose when close button is clicked', () => {
-    const onClose = jest.fn();
-    render(
-      <Toast
-        id="1"
-        type="success"
-        message="Test message"
-        onClose={onClose}
-      />
-    );
-    fireEvent.click(screen.getByRole('button'));
-    expect(onClose).toHaveBeenCalledWith('1');
-  });
-});
-```
-
-2. **Toast Context Tests**
-```jsx
-import { renderHook, act } from '@testing-library/react-hooks';
-import { useToast, ToastProvider } from './ToastContext';
-
-describe('ToastContext', () => {
-  it('adds and removes toasts', () => {
-    const wrapper = ({ children }) => (
-      <ToastProvider>{children}</ToastProvider>
-    );
-    const { result } = renderHook(() => useToast(), { wrapper });
-
-    act(() => {
-      result.current.addToast({
-        type: 'success',
-        message: 'Test message',
-      });
-    });
-
-    expect(result.current.toasts).toHaveLength(1);
-  });
-});
-```
-
-### Integration Tests
-
-1. **Toast Stacking**
-```jsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ToastProvider } from './ToastContext';
-import ToastDemo from './ToastDemo';
-
-describe('Toast Stacking', () => {
-  it('stacks multiple toasts correctly', () => {
-    render(
-      <ToastProvider>
-        <ToastDemo />
-      </ToastProvider>
-    );
-
-    fireEvent.click(screen.getByText('Show Success Toast'));
-    fireEvent.click(screen.getByText('Show Warning Toast'));
-
-    const toasts = screen.getAllByRole('alert');
-    expect(toasts).toHaveLength(2);
-  });
-});
-```
-
-## Demo
-
-The project includes a demo component (`ToastDemo.jsx`) that showcases all toast types and features:
-
-```jsx
-import React from 'react';
-import { useToast } from './ToastContext';
-
-const ToastDemo = () => {
-  const { addToast } = useToast();
-
-  return (
-    <div className="space-y-4">
-      <button
-        onClick={() => addToast({
-          type: 'success',
-          title: 'Success',
-          message: 'Operation completed successfully!',
-        })}
-      >
-        Show Success Toast
-      </button>
-
-      <button
-        onClick={() => addToast({
-          type: 'warning',
-          title: 'Warning',
-          message: 'Please review your action.',
-        })}
-      >
-        Show Warning Toast
-      </button>
-
-      <button
-        onClick={() => addToast({
-          type: 'danger',
-          title: 'Error',
-          message: 'An error occurred.',
-        })}
-      >
-        Show Error Toast
-      </button>
+    <div className="fixed bottom-0 left-0 right-0 p-4 z-50">
+      <div className="max-w-md mx-auto">
+        {toasts.map(toast => (
+          <Toast key={toast.id} {...toast} onClose={removeToast} />
+        ))}
+      </div>
     </div>
   );
 };
 ```
 
-## Design Specifications
+## Technical Architecture
 
-The toast notifications follow these design specifications:
+### 1. Context-Based State Management
+- Uses React Context for global state
+- Provides custom hook (useToast) for easy access
+- Manages toast lifecycle (add/remove)
+- Handles default and custom durations
 
-- **Colors:**
-  - Success: `#8EE59B`
-  - Warning: `#F7D774`
-  - Danger: `#F16C6C`
-  - Text: `#1A1A1A`
+### 2. Component Structure
+```jsx
+// Toast.jsx
+const Toast = ({ id, type, title, message, duration, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => onClose(id), duration);
+    return () => clearTimeout(timer);
+  }, [id, duration, onClose]);
 
-- **Layout:**
-  - Position: Bottom of screen
-  - Max width: 448px
-  - Padding: 20px
-  - Border radius: 12px
-  - Shadow: 0px 4px 24px rgba(0, 0, 0, 0.08)
+  return (
+    <div role="alert" className={`bg-toast-${type}`}>
+      {title && <h3>{title}</h3>}
+      <p>{message}</p>
+    </div>
+  );
+};
+```
 
-- **Typography:**
-  - Title: Bold, 16px
-  - Message: Regular, 14px
+## Key Features
+
+### 1. Type System
+```typescript
+type ToastType = 'success' | 'warning' | 'danger';
+```
+
+### 2. Customization Options
+- Custom durations
+- Optional titles
+- Different styles per type
+- Responsive design
+
+### 3. Accessibility Features
+- ARIA roles
+- Screen reader support
+- Keyboard navigation
+- Color contrast compliance
+
+## Usage Guide
+
+### Basic Usage
+```jsx
+function MyComponent() {
+  const { addToast } = useToast();
+
+  const handleSuccess = () => {
+    addToast({
+      type: 'success',
+      title: 'Success',
+      message: 'Operation completed!'
+    });
+  };
+
+  return <button onClick={handleSuccess}>Complete</button>;
+}
+```
+
+### With Custom Duration
+```jsx
+addToast({
+  type: 'warning',
+  title: 'Warning',
+  message: 'This will stay longer',
+  duration: 10000 // 10 seconds
+});
+```
+
+## Testing Strategy
+
+### 1. Unit Tests
+```jsx
+it('shows success toast when button is clicked', async () => {
+  renderWithProvider(<ToastDemo />);
+  fireEvent.click(screen.getByText(/Show Success Toast/i));
+  await waitFor(() => {
+    expect(screen.getByText('Success message')).toBeInTheDocument();
+  });
+});
+```
+
+### 2. Integration Tests
+- Toast lifecycle testing
+- Multiple toast handling
+- Error boundary testing
+
+## Interview Talking Points
+
+### 1. Design Decisions
+- **Why Context?**
+  - Global state management
+  - Avoids prop drilling
+  - Easy access throughout app
+  - Clean component tree
+
+- **Why Custom Hook?**
+  - Encapsulates toast logic
+  - Provides clean API
+  - Enables error handling
+  - Makes testing easier
+
+### 2. Technical Challenges
+- **State Management**
+  - Handling multiple toasts
+  - Preventing memory leaks
+  - Managing toast lifecycle
+  - Ensuring proper cleanup
+
+- **Performance**
+  - Efficient renders
+  - Memoized callbacks
+  - Proper cleanup
+  - Memory management
+
+### 3. Alternative Approaches
+- **Redux vs Context**
+  - Context is simpler for this use case
+  - No need for complex state management
+  - Better performance for simple state
+  - Easier to maintain
+
+- **CSS-in-JS vs Tailwind**
+  - Tailwind provides consistent design
+  - Better performance
+  - Easier maintenance
+  - Built-in responsive design
+
+### 4. Scalability Considerations
+- **Adding New Features**
+  - Easy to extend toast types
+  - Simple to add new animations
+  - Flexible styling system
+  - Modular component structure
+
+- **Performance at Scale**
+  - Efficient state updates
+  - Proper cleanup
+  - Memory management
+  - Render optimization
+
+## Best Practices
+
+### 1. Code Organization
+- Separate concerns
+- Reusable components
+- Clear file structure
+- Consistent patterns
+
+### 2. Error Handling
+- Clear error messages
+- Provider validation
+- Type checking
+- Graceful fallbacks
+
+### 3. Accessibility
+- ARIA roles
+- Screen reader support
+- Keyboard navigation
+- Color contrast
+
+## Performance Considerations
+
+### 1. Optimization Techniques
+- Memoized callbacks
+- Efficient renders
+- Proper cleanup
+- Memory management
+
+### 2. Best Practices
+- Limit simultaneous toasts
+- Clean up on unmount
+- Use appropriate durations
+- Monitor memory usage
 
 ## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Follow the existing patterns
+2. Add tests for new features
+3. Update documentation
+4. Maintain accessibility
 
 ## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
+MIT License 
