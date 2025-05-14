@@ -11,6 +11,8 @@ A flexible and reusable toast notification system built with React, featuring mu
 - [Interview Talking Points](#interview-talking-points)
 - [Best Practices](#best-practices)
 - [Performance Considerations](#performance-considerations)
+- [Local Setup](#local-setup)
+- [License](#license)
 
 ## Implementation Details
 
@@ -248,5 +250,93 @@ Notes:
 3. Update documentation
 4. Maintain accessibility
 
+## Local Setup
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- npm (v6 or higher)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/toast-demo.git
+cd toast-demo
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
+npm start
+```
+
+The application will be available at `http://localhost:3000`
+
+### Running Tests
+
+To run the test suite:
+```bash
+npm test
+```
+
+To run tests in watch mode:
+```bash
+npm test -- --watch
+```
+
+### Building for Production
+
+To create a production build:
+```bash
+npm run build
+```
+
+The build files will be created in the `build` directory.
+
+## Usage
+
+```jsx
+import { ToastProvider, useToast } from './components/Toast';
+
+function App() {
+  return (
+    <ToastProvider>
+      <YourComponent />
+    </ToastProvider>
+  );
+}
+
+function YourComponent() {
+  const { addToast } = useToast();
+
+  const showToast = () => {
+    addToast({
+      type: 'success',
+      title: 'Success',
+      message: 'Operation completed successfully!',
+      duration: 3000
+    });
+  };
+
+  return <button onClick={showToast}>Show Toast</button>;
+}
+```
+
+## Available Toast Types
+
+- `success`: Green background with checkmark icon
+- `warning`: Yellow background with warning icon
+- `danger`: Red background with error icon
+
+## Customization
+
+You can customize the appearance of toasts by modifying the Tailwind CSS classes in the `Toast.jsx` component.
+
 ## License
-MIT License 
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
