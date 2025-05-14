@@ -154,7 +154,7 @@ it('shows success toast when button is clicked', async () => {
 - Multiple toast handling
 - Error boundary testing
 
-## Interview Talking Points
+Notes: 
 
 ### 1. Design Decisions
 - **Why Context?**
